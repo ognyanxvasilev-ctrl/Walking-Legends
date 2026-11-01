@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Walking Legends — Browser Prototype</title>
+<style>
+:root{--forest:#244b3b;--gold:#e4b75a;--paper:#f6f1e5;--ink:#17211d;--muted:#718078;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input{font:inherit}button{cursor:pointer;border:0;border-radius:14px;padding:12px 16px;font-weight:700}
+.app{max-width:1100px;margin:auto;min-height:100vh;padding-bottom:88px}.top{background:var(--forest);color:white;padding:28px 22px 24px;border-radius:0 0 26px 26px;position:relative;overflow:hidden}
+.top:after{content:"🏛️";position:absolute;right:20px;top:20px;font-size:68px;opacity:.25}
+.eyebrow{color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.15em}.top h1{font-size:clamp(30px,6vw,48px);line-height:1.04;margin:10px 0}.top p{margin:0;color:#e4e9e5;max-width:560px}
+main{padding:22px;}.tabs{display:flex;gap:8px;overflow:auto;padding:12px 16px;background:white;position:sticky;top:0;z-index:4;box-shadow:0 4px 14px #17211d0d}
+.tabs button{background:#f1eee5;color:var(--forest);white-space:nowrap}.tabs button.active{background:var(--forest);color:white}
+.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{background:white;border-radius:20px;padding:18px;box-shadow:0 5px 18px #17211d0a}.hero-card{background:var(--forest);color:white;border-radius:24px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden}.hero-card h2{font-size:30px;margin:5px 0}.hero-card .big{font-size:54px;position:absolute;right:20px;top:18px;opacity:.7}
+h2{margin:0 0 8px;font-size:27px}h3{margin:0 0 6px}p{margin:5px 0;color:var(--muted)}.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:14px 0}.stat{background:white;padding:16px;border-radius:17px}.stat small{display:block;color:var(--muted);font-weight:800;font-size:11px}.stat strong{font-size:28px;color:var(--forest)}
+.primary{background:var(--forest);color:white}.secondary{background:#e9e3d4;color:var(--forest)}.gold{color:var(--gold)}.landmark{display:flex;align-items:center;gap:12px;margin-top:12px}.iconbox{width:50px;height:50px;border-radius:14px;background:var(--paper);display:grid;place-items:center;font-size:25px;flex-shrink:0}
+.landmark .text{flex:1;min-width:0}.landmark p{font-size:13px}.pill{display:inline-block;border-radius:99px;background:#e5f0e8;color:var(--forest);padding:4px 9px;font-size:12px;font-weight:800}
+label{display:block;font-size:12px;font-weight:800;color:var(--forest);margin:16px 0 7px;letter-spacing:.04em}input[type=text]{width:100%;padding:13px;border:1px solid #d8d5cb;border-radius:12px;background:#fff}
+.choices{display:flex;flex-wrap:wrap;gap:8px}.choice{background:#eee9dd;color:var(--forest);padding:9px 12px;border-radius:999px;font-size:13px}.choice.selected{background:var(--forest);color:white;box-shadow:inset 0 0 0 2px var(--gold)}
+.avatarwrap{background:var(--forest);border-radius:22px;padding:20px;text-align:center;color:white;margin-bottom:18px}.avatar{height:138px;width:138px;border-radius:50%;margin:0 auto 8px;background:#ffffff1a;display:grid;place-items:center;position:relative;font-size:78px}.avatar .badge{position:absolute;right:0;top:2px;font-size:28px}
+.mapbox{height:210px;border-radius:22px;background:linear-gradient(135deg,#dce5d1,#eee4cb);position:relative;overflow:hidden;padding:16px;color:var(--forest);margin-bottom:14px}
+.mapbox:before,.mapbox:after{content:"";position:absolute;border:2px solid #9ab59c88;border-radius:45%;width:140%;height:55px;left:-20%;top:75px;transform:rotate(-18deg)}
+.mapbox:after{top:125px;transform:rotate(17deg);border-color:#c7ae7b88}.mapcenter{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:42px;z-index:1}
+.mapnote{position:absolute;bottom:14px;left:16px;font-size:12px;font-weight:700;z-index:2}
+.toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:#17211d;color:white;padding:12px 16px;border-radius:12px;display:none;z-index:9;max-width:90vw;box-shadow:0 5px 25px #0003}
+.navbottom{position:fixed;bottom:0;left:0;right:0;background:white;display:flex;justify-content:center;gap:4px;padding:8px;box-shadow:0 -5px 20px #17211d12;z-index:5}
+.navbottom button{background:transparent;color:var(--muted);padding:9px 10px;flex:1;max-width:150px;font-size:12px}.navbottom button.active{color:var(--forest);background:#e5eee7}
+footer{font-size:12px;color:var(--muted);padding:10px 22px 24px}
+@media(min-width:700px){.navbottom{display:none}.tabs{border-radius:18px;margin:18px 22px 0}.app{padding-bottom:0}main{padding-top:20px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top"><div class="eyebrow">YOUR WORLD. YOUR HISTORY.</div><h1>Walking Legends</h1><p>Walk the world. Uncover the past. Create your explorer and collect history one discovery at a time.</p></header>
+<nav class="tabs" id="tabs">
+<button class="active" data-tab="home">⌂ Home</button><button data-tab="journeys">⚑ Journeys</button><button data-tab="explore">⌖ Explore</button><button data-tab="museum">▣ Museum</button><button data-tab="character">♙ Character</button>
+</nav>
+<main>
+<section id="home" class="panel active">
+<div class="hero-card"><span class="eyebrow">CHAPTER 01</span><div class="big">🏺</div><h2>Ancient Greece</h2><p style="color:#e1e8e2">Three landmarks. Three artefacts. A civilisation waiting to be discovered.</p><button class="secondary" style="margin-top:15px" onclick="showTab('journeys')">Start your journey →</button></div>
+<div class="stats"><div class="stat"><small>TOTAL XP</small><strong id="homeXP">0</strong></div><div class="stat"><small>ARTEFACTS FOUND</small><strong id="homeFound">0 / 3</strong></div></div>
+<div class="card" style="margin:16px 0">
+<h3>🗺️ Explorer quests</h3><p>Complete milestones as you explore.</p>
+<div id="quests"></div>
+</div>
+<div class="card" style="margin:16px 0">
+<h3>🏅 Achievements</h3><p>Milestones earned on your adventure.</p>
+<div id="achievements" class="choices" style="margin-top:12px"></div>
+</div>
+<div class="grid">
+<div class="card"><div style="font-size:28px">🚶</div><h3>Explore the real world</h3><p>Visit landmarks and uncover hidden discoveries.</p></div>
+<div class="card"><div style="font-size:28px">📜</div><h3>Unlock real history</h3><p>Every artefact reveals a story from the past.</p></div>
+<div class="card"><div style="font-size:28px">🏛️</div><h3>Build your museum</h3><p>Display your collection and grow your legacy.</p></div>
+</div>
+</section>
+<section id="journeys" class="panel">
+<h2>Journeys</h2><p>Choose a chapter in human history.</p>
+<div class="hero-card" style="margin-top:16px"><span class="eyebrow">FIRST EXPEDITION</span><h2>Ancient Greece</h2><p style="color:#e1e8e2">Athens, Greece · <span id="journeyCount">0/3</span> discoveries</p></div>
+<div id="destinations"></div>
+<p style="margin-top:18px">Future chapters could include Ancient Egypt, Rome, the Vikings and medieval Europe.</p>
+</section>
+<section id="explore" class="panel">
+<h2>Explore</h2><p>Your next discovery is somewhere out there.</p>
+<div class="mapbox"><strong>FIELD MAP</strong><br><small>ATHENS · GREECE</small><div class="mapcenter">🧭</div><div class="mapnote" id="gpsStatus">Demo map · GPS not checked</div></div>
+<button class="primary" onclick="checkGPS()">⌖ Check my location</button>
+<p id="gpsMessage" style="margin:10px 0 18px">Browser GPS requires permission and a secure context (HTTPS or localhost). This demo can still be explored without GPS.</p>
+<div id="exploreDestinations"></div>
+</section>
+<section id="museum" class="panel">
+<h2>Your Museum</h2><p>Every discovery adds a story to your collection.</p>
+<div class="hero-card"><span class="eyebrow">COLLECTION PROGRESS</span><h2 id="museumCount">0 / 3 artefacts</h2><div style="height:8px;background:#ffffff35;border-radius:99px;margin-top:14px"><div id="progress" style="height:8px;width:0;background:var(--gold);border-radius:99px"></div></div></div>
+<div id="collection"></div>
+</section>
+<section id="character" class="panel">
+<h2>Your Explorer</h2><p>Create a character for your journey through history.</p>
+<div class="avatarwrap"><div class="avatar" id="avatar">🧭<span class="badge" id="roleBadge">⌖</span></div><h2 id="previewName">New Explorer</h2><div id="previewMeta" class="gold">Scout · Level 1</div><p style="color:#e1e8e2">Your adventure, your identity.</p></div>
+<label for="charName">CHARACTER NAME</label><input id="charName" type="text" maxlength="22" value="New Explorer" oninput="updateCharacter()">
+<label>CHOOSE YOUR ROLE</label><div class="choices" id="roles"><button class="choice selected" data-value="Scout">Scout</button><button class="choice" data-value="Scholar">Scholar</button><button class="choice" data-value="Guardian">Guardian</button></div>
+<label>HAIRSTYLE</label><div class="choices" id="hair"><button class="choice selected" data-value="Short">Short</button><button class="choice" data-value="Wavy">Wavy</button><button class="choice" data-value="Long">Long</button><button class="choice" data-value="Curly">Curly</button></div>
+<label>SKIN TONE</label><div class="choices" id="skin"><button class="choice" data-value="Light">Light</button><button class="choice selected" data-value="Medium">Medium</button><button class="choice" data-value="Deep">Deep</button></div>
+<label>OUTFIT COLOUR</label><div class="choices" id="outfit"><button class="choice selected" data-value="Forest Green">Forest Green</button><button class="choice" data-value="Royal Blue">Royal Blue</button><button class="choice" data-value="Burgundy">Burgundy</button><button class="choice" data-value="Sand">Sand</button></div>
+<button class="primary" style="margin-top:20px" onclick="saveCharacter()">Save character</button>
+<p id="saveNote" style="margin-top:10px">Your character is stored in this browser on this device.</p>
+</section>
+</main>
+<footer>Browser prototype v0.2 · Sample Athens destinations · Please visit public areas safely. This demo's progress is saved locally in your browser.</footer>
+</div>
+<nav class="navbottom" id="bottomNav"><button class="active" data-tab="home">⌂<br>Home</button><button data-tab="journeys">⚑<br>Journeys</button><button data-tab="explore">⌖<br>Explore</button><button data-tab="museum">▣<br>Museum</button><button data-tab="character">♙<br>Character</button></nav>
+<div class="toast" id="toast"></div>
+<script>
+const places=[
+{id:1,name:"The Acropolis",subtitle:"Athens · Ancient citadel",icon:"🏛️",artefact:"Owl of Athena",lat:37.9715,lon:23.7257,story:"The owl became a symbol of Athena, goddess of wisdom. Its image appeared on ancient Athenian coins carried throughout the Mediterranean."},
+{id:2,name:"Temple of Olympian Zeus",subtitle:"Athens · Monument",icon:"🏺",artefact:"Laurel Crown",lat:37.9693,lon:23.7331,story:"Construction of this temple began in the 6th century BCE and continued across centuries. It was once among the largest temples in the ancient world."},
+{id:3,name:"Ancient Agora",subtitle:"Athens · Civic heart",icon:"🪙",artefact:"Agora Coin",lat:37.9755,lon:23.7213,story:"The Agora was a centre of public life where people traded, debated, and gathered. It helped shape the civic culture of classical Athens."}
+];
+const defaults={xp:0,found:[],character:{name:"New Explorer",role:"Scout",hair:"Short",skin:"Medium",outfit:"Forest Green"}};
+let state={...defaults,...loadState()};
+state.character={...defaults.character,...(state.character||{})};
+let currentPlace=null;
+function loadState(){try{return JSON.parse(localStorage.getItem("wl-state")||"{}")}catch(e){return {}}}
+function persist(){try{localStorage.setItem("wl-state",JSON.stringify(state))}catch(e){}}
+function toast(s){const t=document.getElementById("toast");t.textContent=s;t.style.display="block";setTimeout(()=>t.style.display="none",2400)}
+function showTab(id){document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id===id));document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("active",x.dataset.tab===id));render();window.scrollTo({top:0,behavior:"smooth"})}
+document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
+function placeCard(p){const found=state.found.includes(p.id);return `<div class="card" style="margin:12px 0"><div class="landmark"><div class="iconbox">${found?"✨":p.icon}</div><div class="text"><h3>${p.name}</h3><p>${p.subtitle}</p><p><span class="pill">${found?"Artefact found": "Hidden artefact · 100 XP"}</span></p></div><button class="secondary" onclick="openPlace(${p.id})">${found?"Story":"Discover"}</button></div></div>`}
+function renderQuests(){
+ const quests=[
+  {id:"first_find",title:"First Discovery",desc:"Find your first artefact",done:state.found.length>=1,progress:Math.min(state.found.length,1),goal:1},
+  {id:"curious_collector",title:"Curious Collector",desc:"Collect two artefacts",done:state.found.length>=2,progress:Math.min(state.found.length,2),goal:2},
+  {id:"history_buff",title:"History Buff",desc:"Earn 200 XP",done:state.xp>=200,progress:Math.min(state.xp,200),goal:200},
+  {id:"make_it_yours",title:"Make It Yours",desc:"Give your explorer a custom name",done:!!state.character.name.trim() && state.character.name.trim()!=="New Explorer",progress:(!!state.character.name.trim() && state.character.name.trim()!=="New Explorer")?1:0,goal:1}
+ ];
+ const q=document.getElementById("quests");
+ if(q) q.innerHTML=quests.map(x=>`<div style="padding:12px 0;border-top:1px solid #eee9dd"><div style="display:flex;justify-content:space-between;gap:10px"><strong>${x.done?"✅":"◯"} ${x.title}</strong><small style="color:var(--muted)">${x.done?"Complete":`${x.progress} / ${x.goal}`}</small></div><p>${x.desc}</p><div style="height:5px;background:#eee9dd;border-radius:99px;margin-top:8px"><div style="height:5px;width:${Math.min(100,x.progress/x.goal*100)}%;background:var(--gold);border-radius:99px"></div></div></div>`).join("");
+ const badges=[
+  {name:"First Find",ok:state.found.length>=1,icon:"🏺"},
+  {name:"Collector",ok:state.found.length>=3,icon:"🏛️"},
+  {name:"Trailblazer",ok:state.xp>=200,icon:"🧭"},
+  {name:"Identity",ok:state.character.name.trim()!=="New Explorer"&&state.character.name.trim()!=="",icon:"🧑"}
+ ];
+ const a=document.getElementById("achievements");
+ if(a) a.innerHTML=badges.map(b=>`<span class="choice ${b.ok?"selected":""}" style="opacity:${b.ok?1:.55}">${b.icon} ${b.name}${b.ok?" ✓":" 🔒"}</span>`).join("");
+}
+function render(){document.getElementById("homeXP").textContent=state.xp;document.getElementById("homeFound").textContent=`${state.found.length} / 3`;document.getElementById("journeyCount").textContent=`${state.found.length}/3`;document.getElementById("museumCount").textContent=`${state.found.length} / 3 artefacts`;document.getElementById("progress").style.width=(state.found.length/3*100)+"%";document.getElementById("destinations").innerHTML=places.map(placeCard).join("");document.getElementById("exploreDestinations").innerHTML=places.map(placeCard).join("");const found=places.filter(p=>state.found.includes(p.id));document.getElementById("collection").innerHTML=found.length?found.map(p=>`<div class="card" style="margin:12px 0"><div class="landmark"><div class="iconbox">🏆</div><div class="text"><h3>${p.artefact}</h3><p>${p.name}</p><p>${p.story}</p></div></div></div>`).join(""):`<div class="card" style="text-align:center;padding:32px"><div style="font-size:45px">🏺</div><h3>Your shelves are waiting.</h3><p>Discover an artefact to add its story to your museum.</p><button class="primary" onclick="showTab('journeys')">Explore journeys</button></div>`;renderCharacter();renderQuests()}
+function openPlace(id){currentPlace=places.find(p=>p.id===id);const found=state.found.includes(id);const detail=document.createElement("div");detail.className="card";detail.style.cssText="position:fixed;z-index:20;inset:10% 5% auto;max-height:80vh;overflow:auto;box-shadow:0 0 0 100vmax #1119";detail.id="placeModal";detail.innerHTML=`<button class="secondary" onclick="document.getElementById('placeModal').remove()">← Back</button><div style="font-size:46px;margin-top:16px">${currentPlace.icon}</div><h2 style="margin-top:8px">${currentPlace.name}</h2><p>${currentPlace.subtitle}</p><label>THE STORY</label><p style="color:var(--ink);line-height:1.65">${currentPlace.story}</p><div class="card" style="margin-top:16px;background:var(--paper)"><label>${found?"ARTEFACT DISCOVERED":"HIDDEN ARTEFACT"}</label><h3>${found?currentPlace.artefact:"Unknown artefact"}</h3><p>${found?"Added to your museum":"Reach the landmark in the real-world game to reveal it."}</p></div><button class="primary" style="width:100%;margin-top:16px" onclick="demoDiscover(${id})">${found?"Already discovered":"Demo: discover artefact (+100 XP)"}</button><p style="font-size:12px;margin-top:10px">Demo mode simulates a discovery so you can test the prototype from anywhere. The real app will verify GPS distance.</p>`;document.body.appendChild(detail)}
+function demoDiscover(id){if(!state.found.includes(id)){state.found.push(id);state.xp+=100;persist();render();toast("Artefact discovered! +100 XP")}const m=document.getElementById("placeModal");if(m)m.remove()}
+function checkGPS(){const msg=document.getElementById("gpsMessage");if(!navigator.geolocation){msg.textContent="This browser does not support location.";return}msg.textContent="Requesting location permission…";navigator.geolocation.getCurrentPosition(pos=>{document.getElementById("gpsStatus").textContent="GPS position detected";msg.textContent=`Your current position: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}. This demo's destinations are in Athens, Greece.`;},err=>{msg.textContent=err.code===1?"Location permission was denied. You can allow it in your browser settings.": "Could not get a location. Try HTTPS and enable device location."},{enableHighAccuracy:true,timeout:10000,maximumAge:30000})}
+const roleIcons={Scout:"⌖",Scholar:"✦",Guardian:"⬟"};
+const outfitColors={"Forest Green":"#52765a","Royal Blue":"#345a9c","Burgundy":"#8d3545","Sand":"#d7bd87"};
+const skinColors={Light:"#f0c9a5",Medium:"#c58c65",Deep:"#8a573b"};
+function renderCharacter(){const c=state.character;document.getElementById("charName").value=c.name;document.getElementById("previewName").textContent=c.name||"Unnamed Explorer";document.getElementById("previewMeta").textContent=`${c.role} · Level ${Math.floor(state.xp/300)+1}`;document.getElementById("roleBadge").textContent=roleIcons[c.role];const av=document.getElementById("avatar");av.style.background=`radial-gradient(circle at 50% 42%, ${skinColors[c.skin]} 0 23%, transparent 24%), radial-gradient(ellipse at 50% 30%, #3b2b23 0 25%, transparent 26%), linear-gradient(to bottom, transparent 53%, ${outfitColors[c.outfit]} 54% 100%), #ffffff1a`;av.textContent=c.hair==="Long"?"👩‍🦱":c.hair==="Curly"?"🧑🏽‍🦱":c.hair==="Wavy"?"🧑🏻‍🦱":"🧑";av.querySelector(".badge").textContent=roleIcons[c.role];for(const [id,key] of [["roles","role"],["hair","hair"],["skin","skin"],["outfit","outfit"]])document.querySelectorAll(`#${id} .choice`).forEach(b=>b.classList.toggle("selected",b.dataset.value===c[key]))}
+function updateCharacter(){state.character.name=document.getElementById("charName").value;renderCharacter()}
+for(const [id,key] of [["roles","role"],["hair","hair"],["skin","skin"],["outfit","outfit"]])document.querySelectorAll(`#${id} .choice`).forEach(b=>b.addEventListener("click",()=>{state.character[key]=b.dataset.value;renderCharacter()}));
+function saveCharacter(){state.character.name=document.getElementById("charName").value.trim()||"New Explorer";persist();renderCharacter();document.getElementById("saveNote").textContent="Saved on this browser and device.";toast("Character saved!")}
+render();
+</script>
+</body>
+</html>
