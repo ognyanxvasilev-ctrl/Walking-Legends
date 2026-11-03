@@ -14,6 +14,12 @@ npm run preview
 
 Then open `http://127.0.0.1:4173` on the same computer. Stop the terminal with `Ctrl+C` when finished.
 
+## Browser safeguards
+
+- The **Check / refresh location** button requests a fresh high-accuracy reading instead of reusing a cached GPS point.
+- When offline, saved progress and discovery cards stay available; only map tiles need a connection.
+- In **Character**, **Reset this device’s progress** clears local XP, artefacts, and customisation only after confirmation. It does not affect any server data because the prototype has no account system yet.
+
 ## Verify the GPS rules
 
 ```powershell
