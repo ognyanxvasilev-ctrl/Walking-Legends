@@ -27,6 +27,7 @@ label{display:block;font-size:12px;font-weight:800;color:var(--forest);margin:16
 .mapbox:after{top:125px;transform:rotate(17deg);border-color:#c7ae7b88}.mapcenter{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:42px;z-index:1}
 .mapnote{position:absolute;bottom:14px;left:16px;font-size:12px;font-weight:700;z-index:2}
 .exploration-map{height:310px;border-radius:22px;overflow:hidden;margin:14px 0;background:linear-gradient(135deg,#dce5d1,#eee4cb);box-shadow:inset 0 0 0 1px #9ab59c88}.map-fallback{padding:22px;color:var(--forest)}.leaflet-container{font:inherit}.landmark-map-marker{background:var(--forest);color:white;border:3px solid var(--gold);border-radius:50%;width:34px;height:34px;display:grid;place-items:center;font-size:18px;box-shadow:0 2px 8px #17211d66}.user-map-marker{background:#345a9c;color:white;border:3px solid white;border-radius:50%;width:22px;height:22px;box-shadow:0 2px 8px #17211d66}.map-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px}.map-actions button{padding:10px 12px;font-size:13px}
+.connection-banner{margin:16px 22px 0;padding:11px 14px;border-radius:14px;background:#fff1d8;color:#704b10;font-weight:700}.danger{background:#8c3036;color:white}.danger-card{border:1px solid #e8c4c7}.danger-card p{margin-bottom:12px}
 .toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:#17211d;color:white;padding:12px 16px;border-radius:12px;display:none;z-index:9;max-width:90vw;box-shadow:0 5px 25px #0003}
 .navbottom{position:fixed;bottom:0;left:0;right:0;background:white;display:flex;justify-content:center;gap:4px;padding:8px;box-shadow:0 -5px 20px #17211d12;z-index:5}
 .navbottom button{background:transparent;color:var(--muted);padding:9px 10px;flex:1;max-width:150px;font-size:12px}.navbottom button.active{color:var(--forest);background:#e5eee7}
@@ -37,6 +38,7 @@ footer{font-size:12px;color:var(--muted);padding:10px 22px 24px}
 <body>
 <div class="app">
 <header class="top"><div class="eyebrow">YOUR WORLD. YOUR HISTORY.</div><h1>Walking Legends</h1><p>Walk the world. Uncover the past. Create your explorer and collect history one discovery at a time.</p></header>
+<div id="connectionBanner" class="connection-banner" role="status" aria-live="polite" hidden></div>
 <nav class="tabs" id="tabs">
 <button class="active" data-tab="home">⌂ Home</button><button data-tab="journeys">⚑ Journeys</button><button data-tab="explore">⌖ Explore</button><button data-tab="museum">▣ Museum</button><button data-tab="character">♙ Character</button>
 </nav>
@@ -67,7 +69,7 @@ footer{font-size:12px;color:var(--muted);padding:10px 22px 24px}
 <section id="explore" class="panel">
 <h2>Explore</h2><p>Your next discovery is somewhere out there.</p>
 <div id="explorationMap" class="exploration-map" role="region" aria-label="Athens exploration map"><div class="map-fallback"><strong>ATHENS EXPLORATION MAP</strong><p>Loading interactive map…</p></div></div>
-<div class="map-actions"><button class="secondary" onclick="focusAthensMap()">⌖ Show Athens landmarks</button><button class="primary" onclick="checkGPS()">⌖ Check my location</button></div>
+<div class="map-actions"><button class="secondary" onclick="focusAthensMap()">⌖ Show Athens landmarks</button><button class="primary" id="locationRefreshButton" onclick="refreshLocation()">⌖ Check / refresh location</button></div>
 <div id="gpsStatus" class="pill" aria-live="polite">Map centres on Athens · GPS not checked</div>
 <p id="gpsMessage" role="status" style="margin:10px 0 18px">Browser GPS requires permission and a secure context (HTTPS or localhost). Discoveries unlock only within 120 metres with a sufficiently accurate reading.</p>
 <div id="exploreDestinations"></div>
@@ -87,6 +89,7 @@ footer{font-size:12px;color:var(--muted);padding:10px 22px 24px}
 <label>OUTFIT COLOUR</label><div class="choices" id="outfit"><button class="choice selected" data-value="Forest Green">Forest Green</button><button class="choice" data-value="Royal Blue">Royal Blue</button><button class="choice" data-value="Burgundy">Burgundy</button><button class="choice" data-value="Sand">Sand</button></div>
 <button class="primary" style="margin-top:20px" onclick="saveCharacter()">Save character</button>
 <p id="saveNote" style="margin-top:10px">Your character is stored in this browser on this device.</p>
+<div class="card danger-card" style="margin-top:22px"><h3>Reset local progress</h3><p>Erase this browser’s XP, artefacts, and explorer customisation. This cannot be undone.</p><button class="danger" id="resetProgressButton" onclick="resetLocalProgress()">Reset this device’s progress</button></div>
 </section>
 </main>
 <footer>Browser prototype v0.3 · Sample Athens destinations · Please visit public areas safely. This demo's progress is saved locally in your browser.</footer>
@@ -95,29 +98,33 @@ footer{font-size:12px;color:var(--muted);padding:10px 22px 24px}
 <div class="toast" id="toast"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" referrerpolicy="no-referrer"></script>
 <script type="module">
+import { getConnectionStatus } from "./js/connection.js";
 import { evaluateDiscovery, formatDistance, locationFromGeolocation } from "./js/gps.js";
 import { createExplorationMapModel } from "./js/exploration-map.js";
+import { loadProgress, resetProgress as createResetProgress, saveProgress } from "./js/progress.js";
 import { ANCIENT_GREECE, EUROPE_WORLDS } from "./js/worlds.js";
 
 const places=ANCIENT_GREECE.places;
 const mapModel=createExplorationMapModel(ANCIENT_GREECE);
-const defaults={xp:0,found:[],character:{name:"New Explorer",role:"Scout",hair:"Short",skin:"Medium",outfit:"Forest Green"}};
-let state={...defaults,...loadState()};
-state.character={...defaults.character,...(state.character||{})};
+let state=loadProgress(window.localStorage);
 let currentPlace=null;
 let latestLocation=null;
 let fieldMap=null;
 let userLocationMarker=null;
 let userAccuracyCircle=null;
-function loadState(){try{return JSON.parse(localStorage.getItem("wl-state")||"{}")}catch(e){return {}}}
-function persist(){try{localStorage.setItem("wl-state",JSON.stringify(state))}catch(e){}}
+let locationRequestInFlight=false;
+function persist(){saveProgress(window.localStorage,state)}
 function toast(s){const t=document.getElementById("toast");t.textContent=s;t.style.display="block";setTimeout(()=>t.style.display="none",2400)}
 function showTab(id){document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id===id));document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("active",x.dataset.tab===id));render();if(id==="explore")requestAnimationFrame(initExploreMap);window.scrollTo({top:0,behavior:"smooth"})}
 document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
+function updateConnectionStatus(){const status=getConnectionStatus(navigator.onLine);const banner=document.getElementById("connectionBanner");banner.hidden=status.isOnline;banner.textContent=status.notice}
+window.addEventListener("online",updateConnectionStatus);
+window.addEventListener("offline",updateConnectionStatus);
 function setMapFallback(message){const container=document.getElementById("explorationMap");container.innerHTML=`<div class="map-fallback"><strong>ATHENS EXPLORATION MAP</strong><p>${message}</p><p>Landmark discovery cards remain available below.</p></div>`}
 function initExploreMap(){
  const container=document.getElementById("explorationMap");
  if(fieldMap){fieldMap.invalidateSize();return true}
+ if(!getConnectionStatus(navigator.onLine).isOnline){setMapFallback(getConnectionStatus(false).notice);return false}
  if(!window.L){setMapFallback("The interactive map could not load. Check your internet connection and try again.");return false}
  container.replaceChildren();
  fieldMap=window.L.map(container,{scrollWheelZoom:true}).setView([mapModel.center.lat,mapModel.center.lon],mapModel.defaultZoom);
@@ -172,7 +179,16 @@ function openPlace(id){currentPlace=places.find(p=>p.id===id);const found=state.
 function awardDiscovery(id){if(state.found.includes(id))return false;state.found.push(id);state.xp+=100;persist();render();toast("Artefact discovered! +100 XP");return true}
 function demoDiscover(id){awardDiscovery(id);const m=document.getElementById("placeModal");if(m)m.remove()}
 function discoverWithGPS(id){const place=places.find(p=>p.id===id);if(state.found.includes(id)){toast("This artefact is already in your museum.");return}if(!latestLocation){toast("Check your location before trying a GPS discovery.");return}const check=evaluateDiscovery(latestLocation,place);if(!check.eligible){toast(check.reason==="accuracy-too-low"?`GPS accuracy is ±${Math.round(check.accuracyMetres)} m. Wait for a reading of 120 m or better.`:`You are ${formatDistance(check.distanceMetres)}. Move within 120 m to discover this artefact.`);return}awardDiscovery(id);const m=document.getElementById("placeModal");if(m)m.remove()}
-function checkGPS(){const msg=document.getElementById("gpsMessage");if(!navigator.geolocation){msg.textContent="This browser does not support location.";return}msg.textContent="Requesting a high-accuracy location…";navigator.geolocation.getCurrentPosition(pos=>{try{latestLocation=locationFromGeolocation(pos);const nearest=places.map(place=>({place,check:evaluateDiscovery(latestLocation,place)})).sort((a,b)=>a.check.distanceMetres-b.check.distanceMetres)[0];const accuracy=Math.round(latestLocation.accuracyMetres);document.getElementById("gpsStatus").textContent=`GPS accuracy ±${accuracy} m`;msg.textContent=nearest.check.reason==="accuracy-too-low"?`Location found, but GPS accuracy is ±${accuracy} m. Wait for a clearer reading of 120 m or better before discoveries can unlock.`:`Nearest landmark: ${nearest.place.name}, ${formatDistance(nearest.check.distanceMetres)}. Discoveries unlock within 120 m.`;updateMapWithLocation();render()}catch(error){msg.textContent="The GPS reading was incomplete. Please try again.";}} ,err=>{const errors={1:"Location permission was denied. You can allow it in your browser settings.",2:"Location is currently unavailable. Check device location services and try again.",3:"Location request timed out. Move to a clearer area and try again."};msg.textContent=errors[err.code]||"Could not get a location. Try HTTPS and enable device location.";},{enableHighAccuracy:true,timeout:10000,maximumAge:30000})}
+function setLocationRefreshBusy(isBusy){const button=document.getElementById("locationRefreshButton");button.disabled=isBusy;button.textContent=isBusy?"⌖ Refreshing location…":"⌖ Check / refresh location"}
+function refreshLocation(){
+ const msg=document.getElementById("gpsMessage");
+ if(locationRequestInFlight)return;
+ if(!navigator.geolocation){msg.textContent="This browser does not support location.";return}
+ locationRequestInFlight=true;setLocationRefreshBusy(true);msg.textContent="Requesting a fresh high-accuracy location…";
+ const finish=()=>{locationRequestInFlight=false;setLocationRefreshBusy(false)};
+ navigator.geolocation.getCurrentPosition(pos=>{try{latestLocation=locationFromGeolocation(pos);const nearest=places.map(place=>({place,check:evaluateDiscovery(latestLocation,place)})).sort((a,b)=>a.check.distanceMetres-b.check.distanceMetres)[0];const accuracy=Math.round(latestLocation.accuracyMetres);const time=new Intl.DateTimeFormat(undefined,{hour:"2-digit",minute:"2-digit"}).format(new Date());document.getElementById("gpsStatus").textContent=`GPS accuracy ±${accuracy} m · Updated ${time}`;msg.textContent=nearest.check.reason==="accuracy-too-low"?`Location refreshed, but GPS accuracy is ±${accuracy} m. Wait for a clearer reading of 120 m or better before discoveries can unlock.`:`Nearest landmark: ${nearest.place.name}, ${formatDistance(nearest.check.distanceMetres)}. Discoveries unlock within 120 m.`;updateMapWithLocation();render()}catch(error){msg.textContent="The GPS reading was incomplete. Please try again.";}finally{finish()}},err=>{const errors={1:"Location permission was denied. You can allow it in your browser settings.",2:"Location is currently unavailable. Check device location services and try again.",3:"Location request timed out. Move to a clearer area and try again."};msg.textContent=errors[err.code]||"Could not get a location. Try HTTPS and enable device location.";finish()},{enableHighAccuracy:true,timeout:15000,maximumAge:0})
+}
+function checkGPS(){refreshLocation()}
 const roleIcons={Scout:"⌖",Scholar:"✦",Guardian:"⬟"};
 const outfitColors={"Forest Green":"#52765a","Royal Blue":"#345a9c","Burgundy":"#8d3545","Sand":"#d7bd87"};
 const skinColors={Light:"#f0c9a5",Medium:"#c58c65",Deep:"#8a573b"};
@@ -180,7 +196,19 @@ function renderCharacter(){const c=state.character;document.getElementById("char
 function updateCharacter(){state.character.name=document.getElementById("charName").value;renderCharacter()}
 for(const [id,key] of [["roles","role"],["hair","hair"],["skin","skin"],["outfit","outfit"]])document.querySelectorAll(`#${id} .choice`).forEach(b=>b.addEventListener("click",()=>{state.character[key]=b.dataset.value;renderCharacter()}));
 function saveCharacter(){state.character.name=document.getElementById("charName").value.trim()||"New Explorer";persist();renderCharacter();document.getElementById("saveNote").textContent="Saved on this browser and device.";toast("Character saved!")}
-Object.assign(window,{showTab,openPlace,demoDiscover,discoverWithGPS,checkGPS,focusAthensMap,saveCharacter});
+function resetLocalProgress(){
+ if(!window.confirm("Reset XP, artefacts, and explorer customisation on this device? This cannot be undone."))return;
+ state=createResetProgress();latestLocation=null;
+ if(fieldMap&&userLocationMarker)fieldMap.removeLayer(userLocationMarker);
+ if(fieldMap&&userAccuracyCircle)fieldMap.removeLayer(userAccuracyCircle);
+ userLocationMarker=null;userAccuracyCircle=null;persist();
+ document.getElementById("gpsStatus").textContent="Map centred on Athens · GPS not checked";
+ document.getElementById("gpsMessage").textContent="Your local progress was reset. Check your location to begin exploring again.";
+ document.getElementById("saveNote").textContent="Your character is stored in this browser on this device.";
+ render();toast("Local progress reset.")
+}
+Object.assign(window,{showTab,openPlace,demoDiscover,discoverWithGPS,checkGPS,refreshLocation,focusAthensMap,saveCharacter,resetLocalProgress});
+updateConnectionStatus();
 render();
 </script>
 </body>
