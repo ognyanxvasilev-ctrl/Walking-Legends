@@ -28,3 +28,6 @@ node --test
 
 The discovery engine uses a 120-metre landmark radius and rejects readings with reported accuracy worse than 120 metres. See [ROADMAP.md](ROADMAP.md) for scope, completed work, and the Android delivery plan.
 
+## Android app
+
+The Kotlin and Jetpack Compose app is in [`app/`](app/). Read [ANDROID.md](ANDROID.md) for its location-permission boundary, current functionality, and build requirements.
